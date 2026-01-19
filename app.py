@@ -1,14 +1,12 @@
 import streamlit as st
 import numpy as np
-import pandas as pd
 import joblib
 
 # ==============================
-# LOAD MODEL, SCALER, FEATURE NAMES
+# LOAD MODEL & SCALER
 # ==============================
 model = joblib.load("logistic_model.pkl")
 scaler = joblib.load("scaler.pkl")
-feature_names = joblib.load("feature_names.pkl")
 
 st.set_page_config(
     page_title="Loan Approval Prediction",
@@ -31,7 +29,7 @@ data keuangan dan riwayat pemohon.
 st.markdown("---")
 
 # ==============================
-# INPUT DATA (USER FRIENDLY)
+# INPUT DATA (TANPA DESIMAL ,00)
 # ==============================
 income = st.number_input(
     "Pendapatan Pemohon per Bulan (Rp)",
@@ -70,19 +68,23 @@ if income > 0:
             "Hal ini dapat meningkatkan risiko penolakan pinjaman."
         )
 
-# ===== LAMA BEKERJA =====
+# ==============================
+# LAMA BEKERJA
+# ==============================
 employment_days = st.number_input(
     "Lama Bekerja (hari | 1 tahun = 365 hari)",
     min_value=0,
     value=0,
     step=30,
     format="%d",
-    help="Contoh: 1 tahun ≈ 365 hari, 5 tahun ≈ 1825 hari"
+    help="Contoh: 1 tahun ≈ 365 hari"
 )
 
 st.caption(f"📌 Perkiraan lama bekerja: **{employment_days / 365:.1f} tahun**")
 
-# ===== UMUR =====
+# ==============================
+# UMUR
+# ==============================
 age_days = st.number_input(
     "Umur Pemohon (hari | 1 tahun = 365 hari)",
     min_value=0,
@@ -94,7 +96,9 @@ age_days = st.number_input(
 
 st.caption(f"📌 Perkiraan umur pemohon: **{age_days / 365:.1f} tahun**")
 
-# ===== RIWAYAT PINJAMAN =====
+# ==============================
+# RIWAYAT PINJAMAN
+# ==============================
 prev_app_count = st.number_input(
     "Jumlah Pengajuan Pinjaman Sebelumnya",
     min_value=0,
@@ -110,18 +114,51 @@ bureau_loan_count = st.number_input(
     value=0,
     step=1,
     format="%d",
-    help=(
-        "Jumlah pinjaman yang masih aktif dan tercatat di lembaga "
-        "penyedia informasi kredit, seperti bank, leasing, atau kartu kredit"
-    )
+    help="Jumlah pinjaman aktif yang tercatat di lembaga kredit"
 )
 
 st.caption(
     "📌 Lembaga kredit (credit bureau) adalah institusi yang mencatat "
-    "riwayat pinjaman seseorang."
+    "riwayat pinjaman seseorang, seperti bank atau lembaga pembiayaan."
 )
 
 st.markdown("---")
+
+# ==============================
+# PREDIKSI (INI BAGIAN KRUSIAL)
+# ==============================
+if st.button("🔍 Prediksi Persetujuan"):
+
+    # ⚠️ URUTAN HARUS SAMA DENGAN TRAINING
+    input_array = np.array([[
+        income,
+        credit_amount,
+        annuity,
+        employment_days,
+        age_days,
+        prev_app_count,
+        bureau_loan_count
+    ]])
+
+    # Scaling (AMAN karena numpy → numpy)
+    input_scaled = scaler.transform(input_array)
+
+    # Prediksi
+    probability = model.predict_proba(input_scaled)[0][1]
+    prediction = model.predict(input_scaled)[0]
+
+    st.subheader("📊 Hasil Prediksi")
+
+    if prediction == 1:
+        st.success("✅ **Pinjaman Diprediksi DISETUJUI**")
+    else:
+        st.error("❌ **Pinjaman Diprediksi DITOLAK**")
+
+    st.markdown(f"""
+    **Probabilitas Persetujuan:** `{probability:.2%}`
+
+    🔎 *Semakin tinggi nilai probabilitas, semakin besar kemungkinan pinjaman disetujui.*
+    """)
 
     st.info("""
     ⚠️ **Catatan Penting:**  

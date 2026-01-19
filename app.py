@@ -1,12 +1,14 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import joblib
 
 # ==============================
-# LOAD MODEL & SCALER
+# LOAD MODEL, SCALER, FEATURE NAMES
 # ==============================
 model = joblib.load("logistic_model.pkl")
 scaler = joblib.load("scaler.pkl")
+feature_names = joblib.load("feature_names.pkl")
 
 st.set_page_config(
     page_title="Loan Approval Prediction",
@@ -29,9 +31,8 @@ data keuangan dan riwayat pemohon.
 st.markdown("---")
 
 # ==============================
-# INPUT DATA
+# INPUT DATA (USER FRIENDLY)
 # ==============================
-
 income = st.number_input(
     "Pendapatan Pemohon per Bulan (Rp)",
     min_value=0,
@@ -47,7 +48,7 @@ credit_amount = st.number_input(
     value=0,
     step=500_000,
     format="%d",
-    help="Total dana pinjaman yang diajukan oleh pemohon"
+    help="Total dana pinjaman yang diajukan"
 )
 
 annuity = st.number_input(
@@ -59,7 +60,7 @@ annuity = st.number_input(
     help="Jumlah cicilan yang harus dibayar setiap bulan"
 )
 
-# ===== RASIO CICILAN (DTI) =====
+# ===== RASIO CICILAN =====
 if income > 0:
     dti = annuity / income
     st.caption(f"📌 Rasio cicilan terhadap pendapatan: **{dti:.0%}**")
@@ -71,7 +72,7 @@ if income > 0:
 
 # ===== LAMA BEKERJA =====
 employment_days = st.number_input(
-    "Lama Bekerja (dalam hari | 1 tahun = 365 hari)",
+    "Lama Bekerja (hari | 1 tahun = 365 hari)",
     min_value=0,
     value=0,
     step=30,
@@ -79,12 +80,11 @@ employment_days = st.number_input(
     help="Contoh: 1 tahun ≈ 365 hari, 5 tahun ≈ 1825 hari"
 )
 
-employment_years = employment_days / 365
-st.caption(f"📌 Perkiraan lama bekerja: **{employment_years:.1f} tahun**")
+st.caption(f"📌 Perkiraan lama bekerja: **{employment_days / 365:.1f} tahun**")
 
 # ===== UMUR =====
 age_days = st.number_input(
-    "Umur Pemohon (dalam hari | 1 tahun = 365 hari)",
+    "Umur Pemohon (hari | 1 tahun = 365 hari)",
     min_value=0,
     value=0,
     step=365,
@@ -92,8 +92,7 @@ age_days = st.number_input(
     help="Contoh: 25 tahun ≈ 9125 hari"
 )
 
-age_years = age_days / 365
-st.caption(f"📌 Perkiraan umur pemohon: **{age_years:.1f} tahun**")
+st.caption(f"📌 Perkiraan umur pemohon: **{age_days / 365:.1f} tahun**")
 
 # ===== RIWAYAT PINJAMAN =====
 prev_app_count = st.number_input(
@@ -119,30 +118,42 @@ bureau_loan_count = st.number_input(
 
 st.caption(
     "📌 Lembaga kredit (credit bureau) adalah institusi yang mencatat "
-    "riwayat pinjaman seseorang, seperti bank atau lembaga pembiayaan."
+    "riwayat pinjaman seseorang."
 )
 
 st.markdown("---")
 
 # ==============================
-# PREDIKSI
+# PREDICTION
 # ==============================
 if st.button("🔍 Prediksi Persetujuan"):
-    input_data = np.array([[
-        income,
-        credit_amount,
-        annuity,
-        employment_days,
-        age_days,
-        prev_app_count,
-        bureau_loan_count
-    ]])
 
-    input_scaled = scaler.transform(input_data)
+    # ==============================
+    # BUILD INPUT DATAFRAME (ANTI ERROR)
+    # ==============================
+    input_dict = {
+        feature_names[0]: income,
+        feature_names[1]: credit_amount,
+        feature_names[2]: annuity,
+        feature_names[3]: employment_days,
+        feature_names[4]: age_days,
+        feature_names[5]: prev_app_count,
+        feature_names[6]: bureau_loan_count
+    }
+
+    input_df = pd.DataFrame([input_dict])
+
+    # ==============================
+    # SCALING & PREDICTION
+    # ==============================
+    input_scaled = scaler.transform(input_df)
 
     probability = model.predict_proba(input_scaled)[0][1]
     prediction = model.predict(input_scaled)[0]
 
+    # ==============================
+    # OUTPUT
+    # ==============================
     st.subheader("📊 Hasil Prediksi")
 
     if prediction == 1:
@@ -161,4 +172,3 @@ if st.button("🔍 Prediksi Persetujuan"):
     Hasil prediksi ini bersifat **pendukung keputusan**, bukan keputusan mutlak.
     Keputusan akhir tetap berada pada pihak lembaga keuangan.
     """)
-

@@ -124,10 +124,6 @@ st.caption(
 st.markdown("---")
 
 
-
-    🔎 *Semakin tinggi nilai probabilitas, semakin besar kemungkinan pinjaman disetujui.*
-    """)
-
     st.info("""
     ⚠️ **Catatan Penting:**  
     Hasil prediksi ini bersifat **pendukung keputusan**, bukan keputusan mutlak.

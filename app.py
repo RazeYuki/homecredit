@@ -3,9 +3,9 @@ import numpy as np
 import joblib
 
 # ==============================
-# LOAD PIPELINE MODEL
+# LOAD DEPLOY PIPELINE
 # ==============================
-model = joblib.load("logistic_pipeline.pkl")
+model = joblib.load("logistic_pipeline_deploy.pkl")
 
 st.set_page_config(
     page_title="Loan Approval Prediction",
@@ -15,12 +15,10 @@ st.set_page_config(
 # ==============================
 # HEADER
 # ==============================
-st.title("🏦 Loan Approval Prediction")
-st.markdown("### 📄 Data Pemohon")
-
+st.title("🏦 Prediksi Persetujuan Pinjaman")
 st.markdown("""
-Aplikasi ini digunakan untuk **memprediksi persetujuan pinjaman**
-menggunakan model *Logistic Regression*.
+Aplikasi ini digunakan untuk **memprediksi apakah pengajuan pinjaman akan disetujui atau ditolak**
+berdasarkan beberapa informasi utama pemohon.
 
 📌 *Aplikasi ini merupakan **sistem pendukung keputusan**, bukan keputusan final.*
 """)
@@ -28,7 +26,7 @@ menggunakan model *Logistic Regression*.
 st.markdown("---")
 
 # ==============================
-# INPUT DATA (SESUIAI TRAINING RAW FEATURES)
+# INPUT DATA PEMOHON
 # ==============================
 
 income = st.number_input(
@@ -36,7 +34,8 @@ income = st.number_input(
     min_value=0,
     value=0,
     step=100_000,
-    format="%d"
+    format="%d",
+    help="Total pendapatan pemohon setiap bulan"
 )
 
 credit_amount = st.number_input(
@@ -44,7 +43,8 @@ credit_amount = st.number_input(
     min_value=0,
     value=0,
     step=500_000,
-    format="%d"
+    format="%d",
+    help="Total dana pinjaman yang diajukan"
 )
 
 annuity = st.number_input(
@@ -52,7 +52,8 @@ annuity = st.number_input(
     min_value=0,
     value=0,
     step=100_000,
-    format="%d"
+    format="%d",
+    help="Jumlah cicilan yang harus dibayar setiap bulan"
 )
 
 # ===== RASIO CICILAN =====
@@ -61,49 +62,47 @@ if income > 0:
     st.caption(f"📌 Rasio cicilan terhadap pendapatan: **{dti:.0%}**")
     if dti > 0.4:
         st.warning(
-            "⚠️ Angsuran cukup tinggi dibanding pendapatan."
+            "⚠️ Angsuran cukup tinggi dibanding pendapatan. "
+            "Hal ini dapat meningkatkan risiko penolakan."
         )
 
-# ===== LAMA BEKERJA =====
-employment_days = st.number_input(
-    "Lama Bekerja (hari | 1 tahun = 365 hari)",
-    min_value=0,
-    value=0,
-    step=30,
-    format="%d"
-)
-st.caption(f"📌 Perkiraan lama bekerja: **{employment_days / 365:.1f} tahun**")
-
 # ===== UMUR =====
-age_days = st.number_input(
-    "Umur Pemohon (hari | 1 tahun = 365 hari)",
-    min_value=0,
-    value=0,
-    step=365,
-    format="%d"
-)
-st.caption(f"📌 Perkiraan umur pemohon: **{age_days / 365:.1f} tahun**")
-
-# ===== RIWAYAT PINJAMAN =====
-prev_app_count = st.number_input(
-    "Jumlah Pengajuan Pinjaman Sebelumnya",
+age = st.number_input(
+    "Umur Pemohon (tahun)",
     min_value=0,
     value=0,
     step=1,
-    format="%d"
+    format="%d",
+    help="Umur pemohon dalam tahun"
 )
 
-bureau_loan_count = st.number_input(
-    "Jumlah Pinjaman Aktif (di Lembaga Kredit)",
+# ===== LAMA BEKERJA =====
+years_employed = st.number_input(
+    "Lama Bekerja (tahun)",
     min_value=0,
     value=0,
     step=1,
-    format="%d"
+    format="%d",
+    help="Jumlah tahun pemohon telah bekerja"
 )
 
-st.caption(
-    "📌 Lembaga kredit (credit bureau) adalah institusi yang mencatat "
-    "riwayat pinjaman seseorang, seperti bank atau lembaga pembiayaan."
+# ===== EXT SOURCE =====
+ext_source_1 = st.number_input(
+    "Skor Kredit Eksternal 1",
+    min_value=0.0,
+    max_value=1.0,
+    value=0.5,
+    step=0.01,
+    help="Skor kredit eksternal (0–1)"
+)
+
+ext_source_2 = st.number_input(
+    "Skor Kredit Eksternal 2",
+    min_value=0.0,
+    max_value=1.0,
+    value=0.5,
+    step=0.01,
+    help="Skor kredit eksternal (0–1)"
 )
 
 st.markdown("---")
@@ -113,18 +112,17 @@ st.markdown("---")
 # ==============================
 if st.button("🔍 Prediksi Persetujuan"):
 
-    # ⚠️ URUTAN HARUS SAMA DENGAN TRAINING
+    # ⚠️ URUTAN HARUS SESUAI TRAINING
     input_array = np.array([[
         income,
         credit_amount,
         annuity,
-        employment_days,
-        age_days,
-        prev_app_count,
-        bureau_loan_count
+        age,
+        years_employed,
+        ext_source_1,
+        ext_source_2
     ]])
 
-    # Pipeline otomatis handle scaling
     probability = model.predict_proba(input_array)[0][1]
     prediction = model.predict(input_array)[0]
 
@@ -146,3 +144,4 @@ if st.button("🔍 Prediksi Persetujuan"):
     Hasil prediksi ini bersifat **pendukung keputusan**, bukan keputusan mutlak.
     Keputusan akhir tetap berada pada pihak lembaga keuangan.
     """)
+

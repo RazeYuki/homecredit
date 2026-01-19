@@ -52,7 +52,7 @@ annuity = st.number_input(
 
 # ===== LAMA BEKERJA =====
 employment_days = st.number_input(
-    "Lama Bekerja (dalam hari)",
+    "Lama Bekerja (dalam hari 1 tahun = 365 hari)",
     min_value=0,
     help="Contoh: 1 tahun ≈ 365 hari, 5 tahun ≈ 1825 hari"
 )
@@ -62,7 +62,7 @@ st.caption(f"📌 Perkiraan lama bekerja: **{employment_years:.1f} tahun**")
 
 # ===== UMUR =====
 age_days = st.number_input(
-    "Umur Pemohon (dalam hari)",
+    "Umur Pemohon (dalam hari 1 tahun = 365 hari)",
     min_value=0,
     help="Contoh: 25 tahun ≈ 9125 hari"
 )

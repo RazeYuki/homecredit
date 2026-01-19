@@ -2,7 +2,9 @@ import streamlit as st
 import numpy as np
 import joblib
 
-# Load model dan scaler
+# ==============================
+# LOAD MODEL & SCALER
+# ==============================
 model = joblib.load("logistic_model.pkl")
 scaler = joblib.load("scaler.pkl")
 
@@ -11,8 +13,11 @@ st.set_page_config(
     layout="centered"
 )
 
-# ===== HEADER =====
+# ==============================
+# HEADER
+# ==============================
 st.title("🏦 Prediksi Persetujuan Pinjaman")
+
 st.markdown("""
 Aplikasi ini digunakan untuk **memprediksi apakah pengajuan pinjaman akan disetujui atau ditolak**  
 berdasarkan data keuangan dan riwayat pemohon.
@@ -22,54 +27,75 @@ berdasarkan data keuangan dan riwayat pemohon.
 
 st.markdown("---")
 
-# ===== INPUT SECTION =====
+# ==============================
+# INPUT DATA PEMOHON
+# ==============================
 st.subheader("📝 Data Pemohon")
 
 income = st.number_input(
-    "Pendapatan Pemohon (Rp)",
+    "Pendapatan Pemohon per Bulan (Rp)",
     min_value=0.0,
-    help="Total pendapatan pemohon per bulan"
+    help="Total pendapatan pemohon setiap bulan"
 )
 
 credit_amount = st.number_input(
-    "Jumlah Pinjaman (Rp)",
+    "Jumlah Pinjaman yang Diajukan (Rp)",
     min_value=0.0,
-    help="Total dana yang diajukan oleh pemohon"
+    help="Total dana pinjaman yang diajukan"
 )
 
 annuity = st.number_input(
     "Angsuran Bulanan (Rp)",
     min_value=0.0,
-    help="Jumlah cicilan yang harus dibayar setiap bulan"
+    help="Jumlah cicilan yang harus dibayarkan setiap bulan"
 )
 
+# ===== LAMA BEKERJA =====
 employment_days = st.number_input(
-    "Lama Bekerja (hari)",
+    "Lama Bekerja (dalam hari)",
     min_value=0,
-    help="Total hari pemohon telah bekerja di tempat saat ini"
+    help="Contoh: 1 tahun ≈ 365 hari, 5 tahun ≈ 1825 hari"
 )
 
+employment_years = employment_days / 365
+st.caption(f"📌 Perkiraan lama bekerja: **{employment_years:.1f} tahun**")
+
+# ===== UMUR =====
 age_days = st.number_input(
-    "Umur Pemohon (hari)",
+    "Umur Pemohon (dalam hari)",
     min_value=0,
-    help="Umur pemohon dalam satuan hari"
+    help="Contoh: 25 tahun ≈ 9125 hari"
 )
 
+age_years = age_days / 365
+st.caption(f"📌 Perkiraan umur pemohon: **{age_years:.1f} tahun**")
+
+# ===== RIWAYAT PINJAMAN =====
 prev_app_count = st.number_input(
-    "Jumlah Pengajuan Sebelumnya",
+    "Jumlah Pengajuan Pinjaman Sebelumnya",
     min_value=0,
     help="Jumlah pengajuan pinjaman yang pernah dilakukan sebelumnya"
 )
 
 bureau_loan_count = st.number_input(
-    "Jumlah Pinjaman di Bureau",
+    "Jumlah Pinjaman Aktif (di Lembaga Kredit)",
     min_value=0,
-    help="Jumlah pinjaman aktif yang tercatat di lembaga kredit"
+    help=(
+        "Jumlah pinjaman yang masih aktif dan tercatat di lembaga penyedia "
+        "informasi kredit, seperti bank, leasing, atau kartu kredit"
+    )
+)
+
+st.caption(
+    "📌 Lembaga kredit (credit bureau) adalah institusi yang mencatat riwayat "
+    "pinjaman seseorang, seperti bank atau lembaga pembiayaan."
 )
 
 st.markdown("---")
 
-# ===== PREDICTION =====
+# ==============================
+# PREDIKSI
+# ==============================
 if st.button("🔍 Prediksi Persetujuan"):
     input_data = np.array([[
         income,
@@ -81,8 +107,10 @@ if st.button("🔍 Prediksi Persetujuan"):
         bureau_loan_count
     ]])
 
+    # Scaling
     input_scaled = scaler.transform(input_data)
 
+    # Prediksi
     probability = model.predict_proba(input_scaled)[0][1]
     prediction = model.predict(input_scaled)[0]
 
@@ -100,7 +128,7 @@ if st.button("🔍 Prediksi Persetujuan"):
     """)
 
     st.info("""
-    ⚠️ **Catatan:**  
+    ⚠️ **Catatan Penting:**  
     Hasil prediksi ini bersifat **pendukung keputusan**, bukan keputusan mutlak.
     Keputusan akhir tetap berada pada pihak lembaga keuangan.
     """)

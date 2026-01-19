@@ -3,7 +3,7 @@ import numpy as np
 import joblib
 
 # ==============================
-# LOAD MODEL PIPELINE DEPLOY
+# LOAD DEPLOY MODEL (PIPELINE)
 # ==============================
 model = joblib.load("logistic_pipeline_deploy.pkl")
 
@@ -18,10 +18,11 @@ st.set_page_config(
 st.title("🏦 Prediksi Persetujuan Pinjaman")
 
 st.markdown("""
-Aplikasi ini membantu **menilai tingkat risiko pengajuan pinjaman**
-berdasarkan data pemohon menggunakan model *Logistic Regression*.
+Aplikasi ini digunakan untuk **menilai tingkat risiko pengajuan pinjaman**
+berdasarkan data dasar pemohon.
 
-📌 *Aplikasi ini adalah **sistem pendukung keputusan**, bukan keputusan final dari bank.*
+📌 *Aplikasi ini merupakan **sistem pendukung keputusan**,  
+bukan keputusan final dari lembaga keuangan.*
 """)
 
 st.markdown("---")
@@ -34,97 +35,87 @@ st.subheader("📝 Data Pemohon")
 income = st.number_input(
     "Pendapatan Pemohon per Bulan (Rp)",
     min_value=0,
+    value=5_000_000,
     step=100_000,
-    format="%d"
+    format="%d",
+    help="Total pendapatan pemohon setiap bulan"
 )
 
 credit_amount = st.number_input(
     "Jumlah Pinjaman yang Diajukan (Rp)",
     min_value=0,
+    value=1_500_000,
     step=500_000,
-    format="%d"
+    format="%d",
+    help="Total dana pinjaman yang diajukan"
 )
 
 annuity = st.number_input(
     "Angsuran Bulanan (Rp)",
     min_value=0,
+    value=500_000,
     step=100_000,
-    format="%d"
+    format="%d",
+    help="Jumlah cicilan per bulan"
 )
 
-# ===== RASIO CICILAN =====
+# ==============================
+# RASIO CICILAN
+# ==============================
 dti = 0
 if income > 0:
     dti = annuity / income
     st.caption(f"📌 Rasio cicilan terhadap pendapatan: **{dti:.0%}**")
-    if dti > 0.4:
-        st.warning("⚠️ Angsuran cukup tinggi dibanding pendapatan.")
 
+    if dti > 0.4:
+        st.warning(
+            "⚠️ Angsuran relatif tinggi dibanding pendapatan. "
+            "Hal ini dapat meningkatkan risiko penolakan."
+        )
+    else:
+        st.success("✅ Rasio cicilan tergolong aman.")
+
+# ==============================
+# UMUR & LAMA BEKERJA
+# ==============================
 age = st.number_input(
     "Umur Pemohon (tahun)",
-    min_value=0,
+    min_value=18,
+    value=30,
     step=1,
-    format="%d"
+    format="%d",
+    help="Umur pemohon dalam tahun"
 )
 
 years_employed = st.number_input(
     "Lama Bekerja (tahun)",
     min_value=0,
+    value=3,
     step=1,
-    format="%d"
+    format="%d",
+    help="Jumlah tahun pemohon telah bekerja"
 )
-
-# ==============================
-# RIWAYAT KREDIT (DROPDOWN)
-# ==============================
-st.subheader("📊 Riwayat Kredit")
-
-credit_score_map = {
-    "🟢 Baik (pembayaran lancar)": 0.8,
-    "🟡 Sedang (pernah menunggak kecil)": 0.5,
-    "🔴 Berisiko (sering menunggak)": 0.2
-}
-
-ext_choice_1 = st.selectbox(
-    "Riwayat Kredit – Sumber Eksternal 1",
-    credit_score_map.keys()
-)
-
-ext_choice_2 = st.selectbox(
-    "Riwayat Kredit – Sumber Eksternal 2",
-    credit_score_map.keys()
-)
-
-ext_source_1 = credit_score_map[ext_choice_1]
-ext_source_2 = credit_score_map[ext_choice_2]
-
-st.info("""
-ℹ️ **Tentang Riwayat Kredit**  
-Pada praktik perbankan, skor riwayat kredit diperoleh langsung dari lembaga penilai kredit.
-Dalam aplikasi ini, nilai digunakan sebagai **simulasi** untuk menunjukkan pengaruh
-riwayat kredit terhadap tingkat risiko pinjaman.
-""")
 
 st.markdown("---")
 
 # ==============================
-# PREDIKSI & INTERPRETASI
+# ANALISIS RISIKO
 # ==============================
 if st.button("🔍 Analisis Risiko Pinjaman"):
 
-input_array = np.array([[
-    income,
-    credit_amount,
-    annuity,
-    age,
-    years_employed
-]])
-
+    # ⚠️ URUTAN HARUS SAMA DENGAN TRAINING
+    input_array = np.array([[
+        income,
+        credit_amount,
+        annuity,
+        age,
+        years_employed
+    ]])
 
     probability = model.predict_proba(input_array)[0][1]
 
     # ==============================
-    # RISK-BASED DECISION
+    # RISK-BASED OUTPUT (MASUK AKAL)
     # ==============================
     if probability >= 0.5:
         risk_level = "🟢 Risiko Rendah"
@@ -142,38 +133,37 @@ input_array = np.array([[
     st.subheader("📊 Hasil Analisis")
 
     getattr(st, color)(f"**Keputusan:** {decision}")
+
     st.markdown(f"""
     **Tingkat Risiko:** {risk_level}  
     **Probabilitas Persetujuan:** `{probability:.2%}`
     """)
 
     # ==============================
-    # PENJELASAN HASIL (LOGIS & AWAM)
+    # PENJELASAN LOGIS (HEURISTIK)
     # ==============================
     st.subheader("🔎 Penjelasan Singkat")
 
-    explanations = []
+    reasons = []
 
     if dti > 0.4:
-        explanations.append("Angsuran relatif besar dibanding pendapatan.")
+        reasons.append("Angsuran cukup besar dibanding pendapatan.")
     if years_employed < 2:
-        explanations.append("Lama bekerja masih tergolong singkat.")
+        reasons.append("Lama bekerja masih relatif singkat.")
     if age < 21:
-        explanations.append("Usia pemohon relatif muda.")
-    if ext_source_1 < 0.5 or ext_source_2 < 0.5:
-        explanations.append("Riwayat kredit eksternal menunjukkan risiko.")
+        reasons.append("Usia pemohon tergolong muda.")
 
-    if explanations:
-        for e in explanations:
-            st.write(f"• {e}")
+    if reasons:
+        for r in reasons:
+            st.write(f"• {r}")
     else:
         st.write(
-            "Profil pemohon menunjukkan karakteristik yang relatif stabil, "
-            "namun keputusan tetap mempertimbangkan pola risiko historis."
+            "Profil pemohon menunjukkan kondisi yang relatif stabil "
+            "berdasarkan data yang tersedia."
         )
 
     st.info("""
     ⚠️ **Catatan Penting:**  
-    Hasil ini merupakan **analisis berbasis data historis** dan digunakan
-    sebagai **pendukung keputusan**, bukan keputusan mutlak lembaga keuangan.
+    Hasil analisis ini didasarkan pada pola data historis dan digunakan
+    sebagai **pendukung keputusan**, bukan keputusan mutlak.
     """)

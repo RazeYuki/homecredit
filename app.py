@@ -16,11 +16,12 @@ st.set_page_config(
 # ==============================
 # HEADER
 # ==============================
-st.title("🏦 Prediksi Persetujuan Pinjaman")
+st.title("🏦 Loan Approval Prediction")
+st.markdown("### 📄 Data Pemohon")
 
 st.markdown("""
-Aplikasi ini digunakan untuk **memprediksi apakah pengajuan pinjaman akan disetujui atau ditolak**  
-berdasarkan data keuangan dan riwayat pemohon.
+Aplikasi ini digunakan untuk **memprediksi persetujuan pinjaman** berdasarkan
+data keuangan dan riwayat pemohon.
 
 📌 *Aplikasi ini merupakan **sistem pendukung keputusan**, bukan keputusan final.*
 """)
@@ -28,32 +29,47 @@ berdasarkan data keuangan dan riwayat pemohon.
 st.markdown("---")
 
 # ==============================
-# INPUT DATA PEMOHON
+# INPUT DATA
 # ==============================
-st.subheader("📝 Data Pemohon")
-
 income = st.number_input(
     "Pendapatan Pemohon per Bulan (Rp)",
     min_value=0.0,
+    value=0.0,
     help="Total pendapatan pemohon setiap bulan"
 )
 
 credit_amount = st.number_input(
     "Jumlah Pinjaman yang Diajukan (Rp)",
     min_value=0.0,
-    help="Total dana pinjaman yang diajukan"
+    value=0.0,
+    help="Total dana pinjaman yang diajukan oleh pemohon"
 )
 
 annuity = st.number_input(
     "Angsuran Bulanan (Rp)",
     min_value=0.0,
-    help="Jumlah cicilan yang harus dibayarkan setiap bulan"
+    value=0.0,
+    help=(
+        "Jumlah cicilan yang harus dibayar setiap bulan "
+        "untuk melunasi pinjaman"
+    )
 )
+
+# ===== RASIO CICILAN =====
+if income > 0:
+    dti = annuity / income
+    st.caption(f"📌 Rasio cicilan terhadap pendapatan: **{dti:.0%}**")
+    if dti > 0.4:
+        st.warning(
+            "⚠️ Angsuran cukup tinggi dibanding pendapatan. "
+            "Hal ini dapat meningkatkan risiko penolakan pinjaman."
+        )
 
 # ===== LAMA BEKERJA =====
 employment_days = st.number_input(
-    "Lama Bekerja (dalam hari 1 tahun = 365 hari)",
+    "Lama Bekerja (dalam hari | 1 tahun = 365 hari)",
     min_value=0,
+    value=0,
     help="Contoh: 1 tahun ≈ 365 hari, 5 tahun ≈ 1825 hari"
 )
 
@@ -62,8 +78,9 @@ st.caption(f"📌 Perkiraan lama bekerja: **{employment_years:.1f} tahun**")
 
 # ===== UMUR =====
 age_days = st.number_input(
-    "Umur Pemohon (dalam hari 1 tahun = 365 hari)",
+    "Umur Pemohon (dalam hari | 1 tahun = 365 hari)",
     min_value=0,
+    value=0,
     help="Contoh: 25 tahun ≈ 9125 hari"
 )
 
@@ -74,12 +91,14 @@ st.caption(f"📌 Perkiraan umur pemohon: **{age_years:.1f} tahun**")
 prev_app_count = st.number_input(
     "Jumlah Pengajuan Pinjaman Sebelumnya",
     min_value=0,
+    value=0,
     help="Jumlah pengajuan pinjaman yang pernah dilakukan sebelumnya"
 )
 
 bureau_loan_count = st.number_input(
     "Jumlah Pinjaman Aktif (di Lembaga Kredit)",
     min_value=0,
+    value=0,
     help=(
         "Jumlah pinjaman yang masih aktif dan tercatat di lembaga penyedia "
         "informasi kredit, seperti bank, leasing, atau kartu kredit"
@@ -87,8 +106,8 @@ bureau_loan_count = st.number_input(
 )
 
 st.caption(
-    "📌 Lembaga kredit (credit bureau) adalah institusi yang mencatat riwayat "
-    "pinjaman seseorang, seperti bank atau lembaga pembiayaan."
+    "📌 Lembaga kredit (credit bureau) adalah institusi yang mencatat "
+    "riwayat pinjaman seseorang, seperti bank atau lembaga pembiayaan."
 )
 
 st.markdown("---")
@@ -107,10 +126,8 @@ if st.button("🔍 Prediksi Persetujuan"):
         bureau_loan_count
     ]])
 
-    # Scaling
     input_scaled = scaler.transform(input_data)
 
-    # Prediksi
     probability = model.predict_proba(input_scaled)[0][1]
     prediction = model.predict(input_scaled)[0]
 

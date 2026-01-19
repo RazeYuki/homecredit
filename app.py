@@ -112,15 +112,14 @@ st.markdown("---")
 # ==============================
 if st.button("🔍 Analisis Risiko Pinjaman"):
 
-    input_array = np.array([[
-        income,
-        credit_amount,
-        annuity,
-        age,
-        years_employed,
-        ext_source_1,
-        ext_source_2
-    ]])
+input_array = np.array([[
+    income,
+    credit_amount,
+    annuity,
+    age,
+    years_employed
+]])
+
 
     probability = model.predict_proba(input_array)[0][1]
 

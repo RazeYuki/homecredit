@@ -123,46 +123,7 @@ st.caption(
 
 st.markdown("---")
 
-# ==============================
-# PREDICTION
-# ==============================
-if st.button("🔍 Prediksi Persetujuan"):
 
-    # ==============================
-    # BUILD INPUT DATAFRAME (ANTI ERROR)
-    # ==============================
-    input_dict = {
-        feature_names[0]: income,
-        feature_names[1]: credit_amount,
-        feature_names[2]: annuity,
-        feature_names[3]: employment_days,
-        feature_names[4]: age_days,
-        feature_names[5]: prev_app_count,
-        feature_names[6]: bureau_loan_count
-    }
-
-    input_df = pd.DataFrame([input_dict])
-
-    # ==============================
-    # SCALING & PREDICTION
-    # ==============================
-    input_scaled = scaler.transform(input_df)
-
-    probability = model.predict_proba(input_scaled)[0][1]
-    prediction = model.predict(input_scaled)[0]
-
-    # ==============================
-    # OUTPUT
-    # ==============================
-    st.subheader("📊 Hasil Prediksi")
-
-    if prediction == 1:
-        st.success("✅ **Pinjaman Diprediksi DISETUJUI**")
-    else:
-        st.error("❌ **Pinjaman Diprediksi DITOLAK**")
-
-    st.markdown(f"""
-    **Probabilitas Persetujuan:** `{probability:.2%}`
 
     🔎 *Semakin tinggi nilai probabilitas, semakin besar kemungkinan pinjaman disetujui.*
     """)

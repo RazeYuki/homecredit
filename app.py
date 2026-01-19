@@ -3,12 +3,12 @@ import numpy as np
 import joblib
 
 # ==============================
-# LOAD DEPLOY PIPELINE
+# LOAD MODEL PIPELINE (DEPLOY)
 # ==============================
 model = joblib.load("logistic_pipeline_deploy.pkl")
 
 st.set_page_config(
-    page_title="Loan Approval Prediction",
+    page_title="Prediksi Persetujuan Pinjaman",
     layout="centered"
 )
 
@@ -16,11 +16,12 @@ st.set_page_config(
 # HEADER
 # ==============================
 st.title("🏦 Prediksi Persetujuan Pinjaman")
-st.markdown("""
-Aplikasi ini digunakan untuk **memprediksi apakah pengajuan pinjaman akan disetujui atau ditolak**
-berdasarkan beberapa informasi utama pemohon.
 
-📌 *Aplikasi ini merupakan **sistem pendukung keputusan**, bukan keputusan final.*
+st.markdown("""
+Aplikasi ini membantu memprediksi **apakah pengajuan pinjaman berpotensi disetujui atau ditolak**
+berdasarkan informasi dasar pemohon.
+
+📌 *Aplikasi ini merupakan **sistem pendukung keputusan**, bukan keputusan final dari bank.*
 """)
 
 st.markdown("---")
@@ -28,6 +29,7 @@ st.markdown("---")
 # ==============================
 # INPUT DATA PEMOHON
 # ==============================
+st.subheader("📝 Data Pemohon")
 
 income = st.number_input(
     "Pendapatan Pemohon per Bulan (Rp)",
@@ -86,24 +88,39 @@ years_employed = st.number_input(
     help="Jumlah tahun pemohon telah bekerja"
 )
 
-# ===== EXT SOURCE =====
-ext_source_1 = st.number_input(
-    "Skor Kredit Eksternal 1",
-    min_value=0.0,
-    max_value=1.0,
-    value=0.5,
-    step=0.01,
-    help="Skor kredit eksternal (0–1)"
+# ==============================
+# SKOR RIWAYAT KREDIT (DROPDOWN)
+# ==============================
+st.subheader("📊 Riwayat Kredit")
+
+credit_score_options = {
+    "🟢 Baik (riwayat pembayaran lancar)": 0.8,
+    "🟡 Sedang (pernah menunggak kecil)": 0.5,
+    "🔴 Berisiko (sering menunggak)": 0.2
+}
+
+ext_choice_1 = st.selectbox(
+    "Riwayat Kredit – Sumber Eksternal 1",
+    list(credit_score_options.keys()),
+    help="Penilaian riwayat kredit dari lembaga eksternal"
 )
 
-ext_source_2 = st.number_input(
-    "Skor Kredit Eksternal 2",
-    min_value=0.0,
-    max_value=1.0,
-    value=0.5,
-    step=0.01,
-    help="Skor kredit eksternal (0–1)"
+ext_choice_2 = st.selectbox(
+    "Riwayat Kredit – Sumber Eksternal 2",
+    list(credit_score_options.keys()),
+    help="Penilaian tambahan dari sumber eksternal lain"
 )
+
+# Konversi dropdown ke angka
+ext_source_1 = credit_score_options[ext_choice_1]
+ext_source_2 = credit_score_options[ext_choice_2]
+
+st.info("""
+ℹ️ **Tentang Riwayat Kredit**  
+Dalam praktik perbankan, skor riwayat kredit diperoleh langsung dari lembaga penilai kredit.
+Pada aplikasi ini, nilai digunakan sebagai **simulasi** untuk menunjukkan pengaruh riwayat kredit
+terhadap persetujuan pinjaman.
+""")
 
 st.markdown("---")
 
@@ -112,7 +129,7 @@ st.markdown("---")
 # ==============================
 if st.button("🔍 Prediksi Persetujuan"):
 
-    # ⚠️ URUTAN HARUS SESUAI TRAINING
+    # ⚠️ URUTAN SESUAI TRAINING DEPLOY MODEL
     input_array = np.array([[
         income,
         credit_amount,
@@ -136,12 +153,11 @@ if st.button("🔍 Prediksi Persetujuan"):
     st.markdown(f"""
     **Probabilitas Persetujuan:** `{probability:.2%}`
 
-    🔎 *Semakin tinggi nilai probabilitas, semakin besar kemungkinan pinjaman disetujui.*
+    🔎 *Semakin tinggi probabilitas, semakin besar peluang pinjaman disetujui.*
     """)
 
     st.info("""
-    ⚠️ **Catatan:**  
-    Hasil prediksi ini bersifat **pendukung keputusan**, bukan keputusan mutlak.
+    ⚠️ **Catatan Penting:**  
+    Hasil prediksi ini bersifat **pendukung keputusan** dan bukan keputusan mutlak.
     Keputusan akhir tetap berada pada pihak lembaga keuangan.
     """)
-

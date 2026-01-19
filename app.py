@@ -3,10 +3,9 @@ import numpy as np
 import joblib
 
 # ==============================
-# LOAD MODEL & SCALER
+# LOAD PIPELINE MODEL
 # ==============================
-model = joblib.load("logistic_model.pkl")
-scaler = joblib.load("scaler.pkl")
+model = joblib.load("logistic_pipeline.pkl")
 
 st.set_page_config(
     page_title="Loan Approval Prediction",
@@ -20,8 +19,8 @@ st.title("🏦 Loan Approval Prediction")
 st.markdown("### 📄 Data Pemohon")
 
 st.markdown("""
-Aplikasi ini digunakan untuk **memprediksi persetujuan pinjaman** berdasarkan
-data keuangan dan riwayat pemohon.
+Aplikasi ini digunakan untuk **memprediksi persetujuan pinjaman**
+menggunakan model *Logistic Regression*.
 
 📌 *Aplikasi ini merupakan **sistem pendukung keputusan**, bukan keputusan final.*
 """)
@@ -29,15 +28,15 @@ data keuangan dan riwayat pemohon.
 st.markdown("---")
 
 # ==============================
-# INPUT DATA (TANPA DESIMAL ,00)
+# INPUT DATA (SESUIAI TRAINING RAW FEATURES)
 # ==============================
+
 income = st.number_input(
     "Pendapatan Pemohon per Bulan (Rp)",
     min_value=0,
     value=0,
     step=100_000,
-    format="%d",
-    help="Total pendapatan pemohon setiap bulan"
+    format="%d"
 )
 
 credit_amount = st.number_input(
@@ -45,8 +44,7 @@ credit_amount = st.number_input(
     min_value=0,
     value=0,
     step=500_000,
-    format="%d",
-    help="Total dana pinjaman yang diajukan"
+    format="%d"
 )
 
 annuity = st.number_input(
@@ -54,8 +52,7 @@ annuity = st.number_input(
     min_value=0,
     value=0,
     step=100_000,
-    format="%d",
-    help="Jumlah cicilan yang harus dibayar setiap bulan"
+    format="%d"
 )
 
 # ===== RASIO CICILAN =====
@@ -64,48 +61,36 @@ if income > 0:
     st.caption(f"📌 Rasio cicilan terhadap pendapatan: **{dti:.0%}**")
     if dti > 0.4:
         st.warning(
-            "⚠️ Angsuran cukup tinggi dibanding pendapatan. "
-            "Hal ini dapat meningkatkan risiko penolakan pinjaman."
+            "⚠️ Angsuran cukup tinggi dibanding pendapatan."
         )
 
-# ==============================
-# LAMA BEKERJA
-# ==============================
+# ===== LAMA BEKERJA =====
 employment_days = st.number_input(
     "Lama Bekerja (hari | 1 tahun = 365 hari)",
     min_value=0,
     value=0,
     step=30,
-    format="%d",
-    help="Contoh: 1 tahun ≈ 365 hari"
+    format="%d"
 )
-
 st.caption(f"📌 Perkiraan lama bekerja: **{employment_days / 365:.1f} tahun**")
 
-# ==============================
-# UMUR
-# ==============================
+# ===== UMUR =====
 age_days = st.number_input(
     "Umur Pemohon (hari | 1 tahun = 365 hari)",
     min_value=0,
     value=0,
     step=365,
-    format="%d",
-    help="Contoh: 25 tahun ≈ 9125 hari"
+    format="%d"
 )
-
 st.caption(f"📌 Perkiraan umur pemohon: **{age_days / 365:.1f} tahun**")
 
-# ==============================
-# RIWAYAT PINJAMAN
-# ==============================
+# ===== RIWAYAT PINJAMAN =====
 prev_app_count = st.number_input(
     "Jumlah Pengajuan Pinjaman Sebelumnya",
     min_value=0,
     value=0,
     step=1,
-    format="%d",
-    help="Jumlah pengajuan pinjaman yang pernah dilakukan sebelumnya"
+    format="%d"
 )
 
 bureau_loan_count = st.number_input(
@@ -113,8 +98,7 @@ bureau_loan_count = st.number_input(
     min_value=0,
     value=0,
     step=1,
-    format="%d",
-    help="Jumlah pinjaman aktif yang tercatat di lembaga kredit"
+    format="%d"
 )
 
 st.caption(
@@ -125,7 +109,7 @@ st.caption(
 st.markdown("---")
 
 # ==============================
-# PREDIKSI (INI BAGIAN KRUSIAL)
+# PREDIKSI
 # ==============================
 if st.button("🔍 Prediksi Persetujuan"):
 
@@ -140,12 +124,9 @@ if st.button("🔍 Prediksi Persetujuan"):
         bureau_loan_count
     ]])
 
-    # Scaling (AMAN karena numpy → numpy)
-    input_scaled = scaler.transform(input_array)
-
-    # Prediksi
-    probability = model.predict_proba(input_scaled)[0][1]
-    prediction = model.predict(input_scaled)[0]
+    # Pipeline otomatis handle scaling
+    probability = model.predict_proba(input_array)[0][1]
+    prediction = model.predict(input_array)[0]
 
     st.subheader("📊 Hasil Prediksi")
 
@@ -161,7 +142,7 @@ if st.button("🔍 Prediksi Persetujuan"):
     """)
 
     st.info("""
-    ⚠️ **Catatan Penting:**  
+    ⚠️ **Catatan:**  
     Hasil prediksi ini bersifat **pendukung keputusan**, bukan keputusan mutlak.
     Keputusan akhir tetap berada pada pihak lembaga keuangan.
     """)

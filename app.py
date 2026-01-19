@@ -123,7 +123,6 @@ st.caption(
 
 st.markdown("---")
 
-
     st.info("""
     ⚠️ **Catatan Penting:**  
     Hasil prediksi ini bersifat **pendukung keputusan**, bukan keputusan mutlak.
